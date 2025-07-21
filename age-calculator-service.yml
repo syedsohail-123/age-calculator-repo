@@ -7,7 +7,7 @@ spec:
     app: age-calculator
   ports:
     - protocol: TCP
-      port: 86         # Exposed service port
-      targetPort: 86   # Container port inside the pod
+      port: 80         # Exposed service port
+      targetPort: 80   # Container port inside the pod
   type: NodePort       # Or LoadBalancer for cloud
 
