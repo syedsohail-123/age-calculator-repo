@@ -16,5 +16,5 @@ spec:
       - name: age-calculator
         image: syedsohail746/age-calculator:1
         ports:
-        - containerPort: 86  # ✅ Your container port
+        - containerPort: 80  # ✅ Your container port
 
