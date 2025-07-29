@@ -1,44 +1,31 @@
 pipeline {
     agent any
-
     environment {
-        DOCKER_IMAGE = "syedsohail746/age-calculator:1"
+        IMAGE_NAME = "syedsohail746/age-calculator"
     }
-
     stages {
-        stage('Checkout Code') {
+        stage('Checkout') {
             steps {
-                git url: 'https://github.com/syedsohail-123/age-calculator-repo.git', branch: 'main'
+                git 'https://github.com/your-username/age-calculator-repo.git'
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Build & Push Docker Image') {
             steps {
                 script {
-                    docker.build(DOCKER_IMAGE)
-                }
-            }
-        }
-
-        stage('Push Docker Image') {
-            steps {
-                script {
-                    docker.withRegistry('https://registry.hub.docker.com', 'dockerhub-credentials-id') {
-                        docker.image(DOCKER_IMAGE).push()
+                    sh 'docker build -t $IMAGE_NAME:latest .'
+                    withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+                        sh 'echo $PASSWORD | docker login -u $USERNAME --password-stdin'
+                        sh 'docker push $IMAGE_NAME:latest'
                     }
                 }
             }
         }
 
-        stage('Deploy Docker Container') {
+        stage('Deploy to Kubernetes') {
             steps {
                 script {
-                    // Stop & remove old container (if running)
-                    sh "docker stop age-calculator-container || true"
-                    sh "docker rm age-calculator-container || true"
-
-                    // Run new container on port 82
-                    sh "docker run -d --name age-calculator-container -p 86:80 ${DOCKER_IMAGE}"
+                    sh 'kubectl apply -f k8s/age-calculator-deployment.yml'
                 }
             }
         }
