@@ -2,47 +2,45 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = 'syedsohail746/age-calculator:1'
+        DOCKER_IMAGE = "syedsohail746/age-calculator:1"
     }
 
     stages {
-        stage('Checkout') {
+        stage('Checkout Code') {
             steps {
-                git 'https://github.com/syedsohail-123/age-calculator-repo.git'
+                git url: 'https://github.com/syedsohail-123/age-calculator-repo.git', branch: 'main'
             }
         }
 
         stage('Build Docker Image') {
             steps {
                 script {
-                    sh "docker build -t ${DOCKER_IMAGE} ."
+                    docker.build(DOCKER_IMAGE)
                 }
             }
         }
-
-        stage('Push to Docker Hub') {
+:wq
+        stage('Push Docker Image') {
             steps {
                 script {
-                    withCredentials([usernamePassword(
-                        credentialsId: 'dockerhub-creds',
-                        usernameVariable: 'DOCKER_USER',
-                        passwordVariable: 'DOCKER_PASS'
-                    )]) {
-                        sh "echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin"
-                        sh "docker push ${DOCKER_IMAGE}"
+                    docker.withRegistry('https://registry.hub.docker.com', 'dockerhub-credentials-id') {
+                        docker.image(DOCKER_IMAGE).push()
                     }
                 }
             }
         }
 
-        stage('Deploy to Kubernetes') {
+        stage('Deploy Docker Container') {
             steps {
                 script {
-                    sh 'kubectl apply -f k8s/age-calculator-deployment.yml'
-                    sh 'kubectl apply -f k8s/age-calculator-service.yml'
+                    // Stop & remove old container (if running)
+                    sh "docker stop age-calculator-container || true"
+                    sh "docker rm age-calculator-container || true"
+
+                    // Run new container on port 82
+                    sh "docker run -d --name age-calculator-container -p 86:80 ${DOCKER_IMAGE}"
                 }
             }
         }
     }
 }
-
